@@ -1,4 +1,4 @@
-module github.com/badermezzi/bankapp
+module github.com/badermezzi/KubeGoBank
 
 go 1.24.0
 
