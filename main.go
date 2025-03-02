@@ -6,18 +6,18 @@ import (
 
 	"github.com/badermezzi/KubeGoBank/api"
 	db "github.com/badermezzi/KubeGoBank/db/sqlc"
+	"github.com/badermezzi/KubeGoBank/util"
 
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-const (
-	dbDriver      = "postgres"
-	dbSource      = "postgresql://root:159159@localhost:5432/simple_bank?sslmode=disable"
-	serverAddress = "0.0.0.0:8080"
-)
-
 func main() {
-	connection, err := sql.Open(dbDriver, dbSource) // Open database connection
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("cannot load config:", err) // Exit if connection fails
+	}
+
+	connection, err := sql.Open(config.DBDriver, config.DBSource) // Open database connection
 	if err != nil {
 		log.Fatal("cannot connect to db:", err) // Exit if connection fails
 	}
@@ -25,7 +25,7 @@ func main() {
 	store := db.NewStore(connection)
 	server := api.NewServer(store)
 
-	err = server.Start(serverAddress)
+	err = server.Start(config.ServerAddress)
 	if err != nil {
 		log.Fatal("cannot start server:", err)
 	}
