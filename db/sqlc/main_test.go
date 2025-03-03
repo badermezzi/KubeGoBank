@@ -16,7 +16,7 @@ const (
 
 var testQueries *Queries // Package-level variable to hold sqlc Queries
 var testDB *sql.DB       // Package-level variable to hold database connection
-var testStore *Store     // Package-level variable to hold the Store
+var testStore Store      // Package-level variable to hold the Store
 
 func TestMain(m *testing.M) {
 	var err error
