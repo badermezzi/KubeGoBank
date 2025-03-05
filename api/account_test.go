@@ -120,12 +120,12 @@ func TestCreateAccountAPI(t *testing.T) {
 			name: "OK",
 			body: gin.H{
 				"owner":    account.Owner,
-				"currency": account.Currency,
+				"currency": "USD",
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateAccountParams{
 					Owner:    account.Owner,
-					Currency: account.Currency,
+					Currency: "USD",
 					Balance:  0,
 				}
 				store.EXPECT().
@@ -171,12 +171,12 @@ func TestCreateAccountAPI(t *testing.T) {
 			name: "InternalError",
 			body: gin.H{
 				"owner":    account.Owner,
-				"currency": account.Currency,
+				"currency": "USD",
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateAccountParams{
 					Owner:    account.Owner,
-					Currency: account.Currency,
+					Currency: "USD",
 					Balance:  0,
 				}
 				store.EXPECT().
