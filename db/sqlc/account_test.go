@@ -13,8 +13,9 @@ import (
 
 // Helper function to create a random account for testing
 func createRandomAccount(t *testing.T) Account {
+	user := createRandomUser(t) // Create a random user
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username, // Use user's username as account owner
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
@@ -32,6 +33,8 @@ func createRandomAccount(t *testing.T) Account {
 
 	return account
 }
+
+// Helper function to create a random user for testing
 
 func TestCreateAccount(t *testing.T) {
 	createRandomAccount(t) // Now TestCreateAccount just calls the helper
