@@ -207,7 +207,7 @@ func TestCreateTransferAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := newTestServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			// Marshal body data to JSON
@@ -232,9 +232,4 @@ func createRandomAccount(owner string) db.Account {
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
-}
-
-func newTestServer(store db.Store) *Server {
-	server := NewServer(store)
-	return server
 }

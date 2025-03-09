@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -17,12 +18,22 @@ type createUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 }
 
-type createUserResponse struct {
+type userResponse struct {
 	Username          string    `json:"username"`
 	FullName          string    `json:"full_name"`
 	Email             string    `json:"email"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
+}
+
+func newUserResponse(user db.User) userResponse {
+	return userResponse{
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
+	}
 }
 
 func (server *Server) createUser(context *gin.Context) {
@@ -61,12 +72,56 @@ func (server *Server) createUser(context *gin.Context) {
 		return
 	}
 
-	response := createUserResponse{
-		Username:          user.Username,
-		FullName:          user.FullName,
-		Email:             user.Email,
-		PasswordChangedAt: user.PasswordChangedAt,
-		CreatedAt:         user.CreatedAt,
+	response := newUserResponse(user)
+
+	context.JSON(http.StatusOK, response)
+
+}
+
+type loginUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+type loginUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        userResponse `json:"user"`
+}
+
+func (server *Server) loginUser(context *gin.Context) {
+	var req loginUserRequest
+
+	err := context.ShouldBindJSON(&req)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, errorResponce(err))
+		return
+	}
+
+	user, err := server.store.GetUser(context, req.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			context.JSON(http.StatusNotFound, errorResponce(err))
+			return
+		}
+		context.JSON(http.StatusInternalServerError, errorResponce(err))
+		return
+	}
+
+	err = util.CheckPassword(req.Password, user.HashedPassword)
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, errorResponce(err))
+		return
+	}
+
+	accessToken, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, errorResponce(err))
+		return
+	}
+
+	response := loginUserResponse{
+		AccessToken: accessToken,
+		User:        newUserResponse(user),
 	}
 
 	context.JSON(http.StatusOK, response)

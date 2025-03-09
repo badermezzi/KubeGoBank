@@ -195,7 +195,7 @@ func TestCreateUserAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
-			server := newTestServer(store)
+			server := newTestServer(t, store)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder, user) // Pass user to checkResponse
 		})
@@ -206,7 +206,7 @@ func requireBodyMatchUser(t *testing.T, body *bytes.Buffer, user db.User) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotResponse createUserResponse
+	var gotResponse userResponse
 	err = json.Unmarshal(data, &gotResponse)
 	require.NoError(t, err)
 	require.Equal(t, user.Username, gotResponse.Username)
