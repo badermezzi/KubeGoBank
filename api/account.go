@@ -2,16 +2,16 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	db "github.com/badermezzi/KubeGoBank/db/sqlc"
+	"github.com/badermezzi/KubeGoBank/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
 
 type createAccountRequest struct {
-	Owner string `json:"owner" binding:"required"`
-	// Currency string `json:"currency" binding:"required,oneof=USD EUR"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -24,8 +24,10 @@ func (server *Server) createAccount(context *gin.Context) {
 		return
 	}
 
+	authPayload := context.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username,
 		Balance:  0,
 		Currency: req.Currency,
 	}
@@ -69,6 +71,14 @@ func (server *Server) getAccount(context *gin.Context) {
 		}
 
 		context.JSON(http.StatusInternalServerError, errorResponce(err))
+		return
+	}
+
+	authPayload := context.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if account.Owner != authPayload.Username {
+		err := errors.New("account doesn't belong to the authenticated user")
+		context.JSON(http.StatusUnauthorized, errorResponce(err))
 		return
 	}
 
