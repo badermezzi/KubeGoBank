@@ -236,7 +236,7 @@ func TestCreateTransferAPI(t *testing.T) {
 	}
 }
 
-// createToken creates a new token for testing
+// createToken creates a new token for testing .....
 func createToken(t *testing.T, username string, tokenMaker token.Maker) string {
 	token, err := tokenMaker.CreateToken(username, time.Hour)
 	require.NoError(t, err)
