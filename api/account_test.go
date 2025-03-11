@@ -748,5 +748,17 @@ func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Ac
 	var gotAccounts []db.Account
 	err = json.Unmarshal(data, &gotAccounts)
 	require.NoError(t, err)
-	require.Equal(t, accounts, gotAccounts)
+
+	// Check length first
+	require.Equal(t, len(accounts), len(gotAccounts))
+
+	// Compare each account individually, handling time comparison properly
+	for i, account := range accounts {
+		require.Equal(t, account.ID, gotAccounts[i].ID)
+		require.Equal(t, account.Owner, gotAccounts[i].Owner)
+		require.Equal(t, account.Balance, gotAccounts[i].Balance)
+		require.Equal(t, account.Currency, gotAccounts[i].Currency)
+		require.True(t, account.CreatedAt.In(time.UTC).Equal(gotAccounts[i].CreatedAt.In(time.UTC)),
+			fmt.Sprintf("CreatedAt times are not equal for account %d", i))
+	}
 }
