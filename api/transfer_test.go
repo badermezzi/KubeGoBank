@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	mockdb "github.com/badermezzi/KubeGoBank/db/mock"
 	db "github.com/badermezzi/KubeGoBank/db/sqlc"
+	"github.com/badermezzi/KubeGoBank/token"
 	"github.com/badermezzi/KubeGoBank/util"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
@@ -19,9 +22,9 @@ import (
 func TestCreateTransferAPI(t *testing.T) {
 	amount := int64(10)
 
-	user1:= randomUser(t)
-	user2:= randomUser(t)
-	user3:= randomUser(t)
+	user1 := randomUser(t)
+	user2 := randomUser(t)
+	user3 := randomUser(t)
 
 	account1 := createRandomAccount(user1.Username)
 	account2 := createRandomAccount(user2.Username)
@@ -222,10 +225,23 @@ func TestCreateTransferAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
+			// Add authorization header for authentication
+			token := createToken(t, user1.Username, server.tokenMaker)
+			authorizationHeader := fmt.Sprintf("Bearer %s", token)
+			request.Header.Set("Authorization", authorizationHeader)
+
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
 	}
+}
+
+// createToken creates a new token for testing
+func createToken(t *testing.T, username string, tokenMaker token.Maker) string {
+	token, err := tokenMaker.CreateToken(username, time.Hour)
+	require.NoError(t, err)
+	require.NotEmpty(t, token)
+	return token
 }
 
 // createRandomAccount generates a random account for testing
