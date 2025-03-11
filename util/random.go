@@ -52,3 +52,8 @@ func RandomCurrency() string {
 func RandomEmail() string {
 	return fmt.Sprintf("%s@email.com", RandomString(6))
 }
+
+// RandomFullName generates a random full name
+func RandomFullName() string {
+	return fmt.Sprintf("%s %s", RandomString(6), RandomString(6))
+}

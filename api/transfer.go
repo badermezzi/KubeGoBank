@@ -2,10 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	db "github.com/badermezzi/KubeGoBank/db/sqlc"
+	"github.com/badermezzi/KubeGoBank/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,11 +28,23 @@ func (server *Server) createTransfer(context *gin.Context) {
 		return
 	}
 
-	if !server.validAccount(context, req.FromAccountID, req.Currency) {
+	fromAccount, valid := server.validAccount(context, req.FromAccountID, req.Currency)
+
+	if !valid {
 		return
 	}
 
-	if !server.validAccount(context, req.ToAccountID, req.Currency) {
+	authPayload := context.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if fromAccount.Owner != authPayload.Username {
+		err := errors.New("from account doesn't belong to the authenticated user")
+		context.JSON(http.StatusUnauthorized, errorResponce(err))
+		return
+	}
+
+	_, valid = server.validAccount(context, req.ToAccountID, req.Currency)
+
+	if !valid {
 		return
 	}
 
@@ -50,23 +64,23 @@ func (server *Server) createTransfer(context *gin.Context) {
 
 }
 
-func (server *Server) validAccount(context *gin.Context, accountID int64, currency string) bool {
+func (server *Server) validAccount(context *gin.Context, accountID int64, currency string) (db.Account, bool) {
 	account, err := server.store.GetAccount(context, accountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			context.JSON(http.StatusNotFound, errorResponce(err))
-			return false
+			return account, false
 		}
 
 		context.JSON(http.StatusInternalServerError, errorResponce(err))
-		return false
+		return account, false
 	}
 
 	if account.Currency != currency {
 		err := fmt.Errorf("account [%d] currency mismatch: %s vs %s", account.ID, account.Currency, currency)
 		context.JSON(http.StatusBadRequest, errorResponce(err))
-		return false
+		return account, false
 	}
 
-	return true
+	return account, true
 }
